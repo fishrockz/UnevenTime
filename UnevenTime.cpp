@@ -42,6 +42,13 @@ uint16_t  getLiveCount (){
 //FTM_SC_CLKS(10) 10 = FF clock
 //FTM_SC_PS(0)  0 = no divied
 
+
+
+int cscSet = 	0b01011100;
+int cscClear = 	0b01011000;
+int SetBit = 	0b00000100;
+
+
 // Setup function for FlexTimer0
 void setupFTM0() {
   // Input filter to help prevent glitches from triggering the capture
@@ -65,8 +72,7 @@ void setupFTM0() {
   FTM0_MOD = 0xFFFF; // max modulus = 65535
 
 
-int cscSet = 	0b01011100;
-int cscClear = 	0b01011000;
+
 
   //FTM0_SC = 0x11; // TOF=0 TOIE=0 CPWMS=0 CLKS=10 (FF clock) PS=001 (divide by 2)
   //FTM0_SC = 0b00010001;
@@ -75,6 +81,8 @@ int cscClear = 	0b01011000;
 //  FTM0_C0SC = 0x48; // CHF=0 CHIE=1 (enable interrupt) MSB=0 MSA=0 ELSB=1 (input capture) ELSA=0 DMA=0
   //FTM0_C0SC = 0b01011100;
   FTM0_C0SC = 0b01010100;
+  //FTM0_C0SC &= ~SetBit; // this affect whether or not we will change the output but not if the isr gets trigered
+  
   //FTM0_C0SC = cscClear;
   //            76543210 
   //cscSet = 0b01011100;
@@ -103,20 +111,26 @@ int cscClear = 	0b01011000;
 }
 
 
-int numberOfTimes=5;
+const int numberOfTimes=6;
 
 int CurentTimerIndex=0;
 
 
 uint32_t reversvalue [numberOfTimes] = { 
-0x5000,
+0x6000,
 0x1000,
 0x1000,
 0x1000,
-0x1000,
+0x1000,0x1000,
 };
 
+void StartTimer(void) {
+//FTM0_SC =  FTM0_SC_VALUE;
+setupFTM0();
 
+
+
+}
 int LEDSTATE=0;
 // Interrupt Service Routine for FlexTimer0 Module
 void ftm0_isr(void) {
@@ -127,28 +141,50 @@ void ftm0_isr(void) {
 
 	
 	if (FTM0_SC & 0x80) {
-		digitalWrite(ledPin, LOW);
-		LEDSTATE=0;
+	
+	if (LEDSTATE==1){LEDSTATE=0;}else{LEDSTATE=1;}
+		digitalWrite(ledPin, LEDSTATE);
+	
+	//	digitalWrite(ledPin, LOW);
+	//	LEDSTATE=0;
 	//	Serial.println ("fireA");
-		FTM0_C0V = 0x5000;
+	//	FTM0_C0V = 0x5000;
+	
+		//FTM0_C0SC |= SetBit; // turn on the set but
+		FTM0_SC &= ~0x80;
+		
+		
 	}
 
 	if  (FTM0_C0SC & 0x80){
 	
-	
-	
-	
-	
 		if (LEDSTATE==1){LEDSTATE=0;}else{LEDSTATE=1;}
 		digitalWrite(ledPin, LEDSTATE);
-		FTM0_C0V += 0x1000;
-//Serial.println ("fireB");
+	
 		
+		if (reversvalue[CurentTimerIndex]+FTM0_C0V> 58000){
+		//FTM0_C0SC &= ~SetBit;
+		}
+		FTM0_C0V += reversvalue[CurentTimerIndex];
+		
+	
+	
+		FTM0_C0SC &= ~0x80;
+		
+//Serial.println ("fireB");
+		CurentTimerIndex+=1;
+		if (CurentTimerIndex>=numberOfTimes){
+		
+		CurentTimerIndex=0;
+		FTM0_SC = 0x00;
+		
+		}
 	}
 
+	
 
-	FTM0_SC &= ~0x80;
-	FTM0_C0SC &= ~0x80;
+	
+	
 
 	
 

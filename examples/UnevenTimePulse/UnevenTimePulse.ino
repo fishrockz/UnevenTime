@@ -8,6 +8,8 @@ void setup() {
   setupFTM0();
 }
 
+
+int ticks=0;
 void loop() {
   
     // Clear channel interrupt flag
@@ -16,12 +18,16 @@ void loop() {
  Serial.print("KINETISK: ");
 #endif
     
-    Serial.print("Count: ");
-    Serial.print(getLiveCount()/(31250.0/2)); // Captured time of wheel revolution
-    Serial.println("s");
+    Serial.print("ticks: ");
+    Serial.print(ticks); // Captured time of wheel revolution
+    Serial.println(" ");
 //    Serial.print(" Overflow: ");
 //    Serial.println(getOverflow()); // Overflow happens after ~ 4.2s
-    delay(100);
+    ticks++;
+    digitalWrite(ledPin, HIGH);
+    
+    StartTimer();
+    delay(1000);
     
 //  if ((FTM0_C0SC&0x80) != 0) { // Look for channel interrupt flag
 //    digitalWrite(ledPin, HIGH);
