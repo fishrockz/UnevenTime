@@ -1,11 +1,11 @@
 #include <UnevenTime.h>
 
-
+int LEDSTATE;
 
 void setup() {
   pinMode(ledPin, OUTPUT);
   //Serial.begin(115200);
-  setupFTM0();
+  LEDSTATE=0;
 }
 
 
@@ -24,7 +24,8 @@ void loop() {
 //    Serial.print(" Overflow: ");
 //    Serial.println(getOverflow()); // Overflow happens after ~ 4.2s
     ticks++;
-    digitalWrite(ledPin, HIGH);
+    LEDSTATE=1;
+    digitalWrite(ledPin, LEDSTATE);
     
     StartTimer();
     delay(1000);

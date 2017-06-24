@@ -1,6 +1,6 @@
 #include "UnevenTime.h"
 
-
+extern int LEDSTATE;
 
 
 // convert from microseconds to I/O clock ticks
@@ -86,7 +86,7 @@ void setupFTM0() {
   //FTM0_C0SC = cscClear;
   //            76543210 
   //cscSet = 0b01011100;
-  FTM0_C0V = 0x7000;
+  FTM0_C0V = 0x2000;
 //  FTM0_C0SC = 0b100000;
   FTM0_SC =  FTM0_SC_VALUE;
   #if defined(KINETISK)
@@ -111,9 +111,10 @@ void setupFTM0() {
 }
 
 
-const int numberOfTimes=6;
+const int numberOfTimes=5;
 
 int CurentTimerIndex=0;
+int RollOverCount=0;
 
 
 uint32_t reversvalue [numberOfTimes] = { 
@@ -121,17 +122,17 @@ uint32_t reversvalue [numberOfTimes] = {
 0x1000,
 0x1000,
 0x1000,
-0x1000,0x1000,
+0x1000,
 };
 
 void StartTimer(void) {
 //FTM0_SC =  FTM0_SC_VALUE;
 setupFTM0();
 
-
-
+CurentTimerIndex=0;
+RollOverCount=0;
 }
-int LEDSTATE=0;
+
 // Interrupt Service Routine for FlexTimer0 Module
 void ftm0_isr(void) {
 	//Serial.println ("fire");
@@ -142,7 +143,7 @@ void ftm0_isr(void) {
 	
 	if (FTM0_SC & 0x80) {
 	
-	if (LEDSTATE==1){LEDSTATE=0;}else{LEDSTATE=1;}
+		if (LEDSTATE==1){LEDSTATE=0;}else{LEDSTATE=1;}
 		digitalWrite(ledPin, LEDSTATE);
 	
 	//	digitalWrite(ledPin, LOW);
@@ -154,6 +155,11 @@ void ftm0_isr(void) {
 		FTM0_SC &= ~0x80;
 		
 		
+		
+		RollOverCount+=1;
+		if (RollOverCount>0){
+		
+		}FTM0_SC = 0x00;
 	}
 
 	if  (FTM0_C0SC & 0x80){
@@ -176,7 +182,7 @@ void ftm0_isr(void) {
 		if (CurentTimerIndex>=numberOfTimes){
 		
 		CurentTimerIndex=0;
-		FTM0_SC = 0x00;
+		//FTM0_SC = 0x00;
 		
 		}
 	}
