@@ -1,0 +1,30 @@
+
+
+this is needed if the individual changels are not on 
+FTM_SC_TOIE  = 0b0100000
+But if the indiviual changes are in standard edge alingn mode then ftm0_isr at roll over anyway.
+
+FTM0_SC |= FTM_SC_TOIE # sets the output pins to toggle when this happens
+
+## but you get ftm0_isr event at rollover if any og the changels trigISR bit is on
+
+int Trigdown = 		0b00000100;
+int TrigUp = 		0b00001000;
+int trigInternal = 	0b00010000;
+int trigExtPinAndISR = 	0b00100000;
+int trigISR=		0b01000000;
+
+
+//if FTM_SC_TOIE  is true
+	//FTM0_C0SC = Trigdown | TrigUp |  trigISR | trigInternal;// internal isr's but no output on pin 22
+	//FTM0_C0SC = Trigdown | TrigUp | trigInternal ;// just ISR, same as above
+	//FTM0_C0SC = Trigdown | TrigUp | trigExtPinAndISR;// internal isr's and pwm
+	//FTM0_C0SC = Trigdown | TrigUp | trigExtPinAndISR | trigISR;// same as above
+	//FTM0_C0SC = Trigdown | TrigUp | trigISR ;// nothing..
+//if FTM_SC_TOIE  is false
+	//FTM0_C0SC = Trigdown | TrigUp | trigInternal;// nothing..
+	//FTM0_C0SC = Trigdown | TrigUp |  trigISR | trigInternal;// internal isr's but no output on pin 22
+
+
+
+

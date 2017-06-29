@@ -1,10 +1,12 @@
 #include <UnevenTime.h>
 
 int LEDSTATE;
+int trigerPin=12;
+
 
 void setup() {
   pinMode(ledPin, OUTPUT);
-  //Serial.begin(115200);
+	pinMode(trigerPin, OUTPUT);
   LEDSTATE=0;
 }
 
@@ -12,7 +14,7 @@ void setup() {
 int ticks=0;
 void loop() {
   
-    // Clear channel interrupt flag
+
 
 #if defined(KINETISK)
  Serial.print("KINETISK: ");
@@ -21,19 +23,18 @@ void loop() {
     Serial.print("ticks: ");
     Serial.print(ticks); // Captured time of wheel revolution
     Serial.println(" ");
-//    Serial.print(" Overflow: ");
-//    Serial.println(getOverflow()); // Overflow happens after ~ 4.2s
+
     ticks++;
     LEDSTATE=1;
-    digitalWrite(ledPin, LEDSTATE);
+    
+    digitalWrite(trigerPin, 1);digitalWrite(ledPin, LEDSTATE);
+    
     
     StartTimer();
-    delay(1000);
+    delay(100);
+    digitalWrite(trigerPin, 0);
+   Serial.println( getLiveCount());
+    delay(2000);
     
-//  if ((FTM0_C0SC&0x80) != 0) { // Look for channel interrupt flag
-//    digitalWrite(ledPin, HIGH);
-//  }else {
-//    digitalWrite(ledPin, LOW);
-//  }
-//  FTM0_C0SC &= ~0x80;
+
 }
