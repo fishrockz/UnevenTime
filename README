@@ -1,4 +1,16 @@
+when porting accross timers
 
+
+do not find replace FTM0 with FTM1 with a any class select but uper class replace
+
+
+void ftm1_isr
+
+dose not equal 
+
+void FTM1_isr
+
+TOP TIP!!!!
 
 this is needed if the individual changels are not on 
 FTM_SC_TOIE  = 0b0100000
