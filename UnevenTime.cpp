@@ -92,16 +92,16 @@ int trigISR=		0b01000000;
 extern EventObjectScheduler WsSEventManger;
 UnevenTimeEventObject  ThisUnevenTimeEventInfo;
 
-void StartTimer(voidFunctionWithEventBaseObjectParameter newFunction) {
+void StartTimer(voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction) {
 //FTM1_SC =  FTM1_SC_VALUE;
-setupFTM1( newFunction);
+setupFTM1(newEndFunction, newTickFunction);
 
 CurentTimerIndex=0;
 RollOverCount=0;
 }
 
 
-void setupFTM1(voidFunctionWithEventBaseObjectParameter  newFunction) {
+void setupFTM1(voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction) {
 
 	SIM_SCGC6|=1<<25; //enable FTM1 and FTM1 module clock
 //	SIM_SCGC6|=0x03000000
@@ -153,21 +153,12 @@ void setupFTM1(voidFunctionWithEventBaseObjectParameter  newFunction) {
 	//*portConfigRegister(22) = PORT_PCR_MUX(4) | PORT_PCR_DSE | PORT_PCR_SRE;
 	//NVIC_SET_PRIORITY(IRQ_FTM1, 32);
 	
-	userUnevenFunc=newFunction;
-	
+	userUnevenEndFunc=newEndFunction;
+	userUnevenTickFunc=newTickFunction;
 	
 	NVIC_ENABLE_IRQ(IRQ_FTM1);
 
-	/* Pins that can be used for Input Capture:
-	Teensy Port  Name  CPU Pin  Signal
-	9            PTC3  46       FTM1_CH2
-	10           PTC4  49       FTM1_CH3
-	22           PTC1  44       FTM1_CH0
-	23           PTC2  45       FTM1_CH1
-	*/
 
-	// PIN configuration, alternative function 4 on Pin 44 (Teensy 22) (FTM1_CH0)
-	//PORTC_PCR1 |= 0x400;
 }
 
 
@@ -211,15 +202,17 @@ void ftm1_isr(void) {
 				FTM1_C0SC=0;
 				RollOverCount=TimeAsTicks[CurentTimerIndex]/pow(2,16);
 				//Serial.print("overflows: ");Serial.println(RollOverCount);
-			
-			
+				
 			
 			}
+			
+			EventBaseObject * UnevenTimeEventObject;
+			userUnevenTickFunc(UnevenTimeEventObject);
 		
 		}else{
 			FTM1_C0SC=0;
 		
-			WsSEventManger.trigger( &ThisUnevenTimeEventInfo, userUnevenFunc );
+			WsSEventManger.trigger( &ThisUnevenTimeEventInfo, userUnevenEndFunc );
 		}
 	}
 

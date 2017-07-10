@@ -13,7 +13,7 @@ void setup() {
 
 void blockFunction(EventBaseObject * ThisFunctionsInfoPointer){
 
-
+	Serial.println ("this is the fast function");
 }
 
 void generalFunction(EventBaseObject * ThisFunctionsInfoPointer){
@@ -43,7 +43,7 @@ void loop() {
 	digitalWrite(trigerPin, 1);digitalWrite(ledPin, LEDSTATE);
 
 
-	StartTimer(generalFunction);
+	StartTimer(generalFunction,blockFunction);
 	delay(100);
 	digitalWrite(trigerPin, 0);
 	Serial.println( getLiveCount());
