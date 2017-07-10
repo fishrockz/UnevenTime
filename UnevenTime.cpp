@@ -86,7 +86,22 @@ int trigISR=		0b01000000;
 // return reversvalue[III] *( TIMER_TICKS_PER_MICROSECOND*1000);
 //}
 // Setup function for FlexTimer0
-void setupFTM1() {
+
+
+
+extern EventObjectScheduler WsSEventManger;
+UnevenTimeEventObject  ThisUnevenTimeEventInfo;
+
+void StartTimer(voidFunctionWithEventBaseObjectParameter newFunction) {
+//FTM1_SC =  FTM1_SC_VALUE;
+setupFTM1( newFunction);
+
+CurentTimerIndex=0;
+RollOverCount=0;
+}
+
+
+void setupFTM1(voidFunctionWithEventBaseObjectParameter  newFunction) {
 
 	SIM_SCGC6|=1<<25; //enable FTM1 and FTM1 module clock
 //	SIM_SCGC6|=0x03000000
@@ -124,7 +139,7 @@ void setupFTM1() {
 	for (int III=0;III<numberOfTimes;III++){
 	
 		TimeAsTicks[III] = reversvalue[III] *( TIMER_TICKS_PER_MICROSECOND*1000);
-		Serial.println(TimeAsTicks[III]);
+		//Serial.println(TimeAsTicks[III]);
 	}
 	//#define TIMER_TICKS_PER_MICROSECOND (CLOCKS_PER_MICROSECOND * FTM1_SC_PRESCALE_RATIO)
 	CurentTimerIndex=0;
@@ -137,6 +152,10 @@ void setupFTM1() {
 	Serial.println(FTM1_C0V);
 	//*portConfigRegister(22) = PORT_PCR_MUX(4) | PORT_PCR_DSE | PORT_PCR_SRE;
 	//NVIC_SET_PRIORITY(IRQ_FTM1, 32);
+	
+	userUnevenFunc=newFunction;
+	
+	
 	NVIC_ENABLE_IRQ(IRQ_FTM1);
 
 	/* Pins that can be used for Input Capture:
@@ -156,60 +175,52 @@ void setupFTM1() {
 
 
 
-void StartTimer(void) {
-//FTM1_SC =  FTM1_SC_VALUE;
-setupFTM1();
 
-CurentTimerIndex=0;
-RollOverCount=0;
-}
 
 // Interrupt Service Routine for FlexTimer0 Module
 
 void ftm1_isr(void) {
 
-if  (FTM1_SC & 0x80){
-FTM1_SC &= ~0x80;
-		//if (LEDSTATE==1){LEDSTATE=0;}else{LEDSTATE=1;}
-		//digitalWrite(ledPin, LEDSTATE);
-		//Serial.println("over");
-		if (RollOverCount>0){
-		RollOverCount-=1;
-		if (RollOverCount==0){
-			FTM1_C0SC = TrigUp | Trigdown |  trigISR | trigInternal;
-		}
-		}
-}
-
-
-if  (FTM1_C0SC & 0x80){
-	//FTM1_C0SC &= ~0x80;
-	FTM1_C0SC&=0x7F;
-	if (LEDSTATE==1){LEDSTATE=0;}else{LEDSTATE=1;}
-	digitalWrite(ledPin, LEDSTATE);
-	CurentTimerIndex+=1;
-	if (CurentTimerIndex<numberOfTimes){
-		
-		
-		FTM1_C0V = FTM1_C0V + TimeAsTicks[CurentTimerIndex] ;
-		FTM1_PWMLOAD|=0x200;// why 0x200???
-		//Serial.print("boo: ");Serial.println(TimeAsTicks[CurentTimerIndex]);
-		if (TimeAsTicks[CurentTimerIndex]>pow(2,16)){
-			FTM1_C0SC=0;
-			RollOverCount=TimeAsTicks[CurentTimerIndex]/pow(2,16);
-			//Serial.print("overflows: ");Serial.println(RollOverCount);
-		}
-		
-	}else{
-		FTM1_C0SC=0;
+	if  (FTM1_SC & 0x80){
+		FTM1_SC &= ~0x80;
+			//if (LEDSTATE==1){LEDSTATE=0;}else{LEDSTATE=1;}
+			//digitalWrite(ledPin, LEDSTATE);
+			//Serial.println("over");
+			if (RollOverCount>0){
+			RollOverCount-=1;
+			if (RollOverCount==0){
+				FTM1_C0SC = TrigUp | Trigdown |  trigISR | trigInternal;
+			}
+			}
 	}
-}
 
-	
 
-	
-	
-
-	
+	if  (FTM1_C0SC & 0x80){
+		//FTM1_C0SC &= ~0x80;
+		FTM1_C0SC&=0x7F;
+		if (LEDSTATE==1){LEDSTATE=0;}else{LEDSTATE=1;}
+		digitalWrite(ledPin, LEDSTATE);
+		CurentTimerIndex+=1;
+		if (CurentTimerIndex<numberOfTimes){
+		
+		
+			FTM1_C0V = FTM1_C0V + TimeAsTicks[CurentTimerIndex] ;
+			FTM1_PWMLOAD|=0x200;// why 0x200???
+			//Serial.print("boo: ");Serial.println(TimeAsTicks[CurentTimerIndex]);
+			if (TimeAsTicks[CurentTimerIndex]>pow(2,16)){
+				FTM1_C0SC=0;
+				RollOverCount=TimeAsTicks[CurentTimerIndex]/pow(2,16);
+				//Serial.print("overflows: ");Serial.println(RollOverCount);
+			
+			
+			
+			}
+		
+		}else{
+			FTM1_C0SC=0;
+		
+			WsSEventManger.trigger( &ThisUnevenTimeEventInfo, userUnevenFunc );
+		}
+	}
 
 }
