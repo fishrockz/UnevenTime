@@ -12,10 +12,10 @@ extern int LEDSTATE;
 
 
 
+UnevenTimeTriger * UnevenTimeTriger::list[2];
 
 
-
-uint16_t  getLiveCount (){
+uint16_t  UnevenTimeTriger::getLiveCount (){
 
 	return FTM1_CNT;
 
@@ -92,7 +92,7 @@ int trigISR=		0b01000000;
 extern EventObjectScheduler WsSEventManger;
 UnevenTimeEventObject  ThisUnevenTimeEventInfo;
 
-void StartTimer(voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction) {
+void UnevenTimeTriger::StartTimer(voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction) {
 //FTM1_SC =  FTM1_SC_VALUE;
 setupFTM1(newEndFunction, newTickFunction);
 
@@ -101,7 +101,7 @@ RollOverCount=0;
 }
 
 
-void setupFTM1(voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction) {
+void UnevenTimeTriger::setupFTM1(voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction) {
 
 	SIM_SCGC6|=1<<25; //enable FTM1 and FTM1 module clock
 //	SIM_SCGC6|=0x03000000
@@ -152,6 +152,8 @@ void setupFTM1(voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunc
 	Serial.println(FTM1_C0V);
 	//*portConfigRegister(22) = PORT_PCR_MUX(4) | PORT_PCR_DSE | PORT_PCR_SRE;
 	//NVIC_SET_PRIORITY(IRQ_FTM1, 32);
+	
+	list[0] = this;
 	
 	userUnevenEndFunc=newEndFunction;
 	userUnevenTickFunc=newTickFunction;
@@ -207,12 +209,12 @@ void ftm1_isr(void) {
 			}
 			
 			EventBaseObject * UnevenTimeEventObject;
-			userUnevenTickFunc(UnevenTimeEventObject);
+			UnevenTimeTriger::list[0]->userUnevenTickFunc(UnevenTimeEventObject);
 		
 		}else{
 			FTM1_C0SC=0;
-		
-			WsSEventManger.trigger( &ThisUnevenTimeEventInfo, userUnevenEndFunc );
+		//PulseEventInput::list[6]->isr
+			WsSEventManger.trigger( &ThisUnevenTimeEventInfo, UnevenTimeTriger::list[0]->userUnevenEndFunc );// its zeros cos of FTM1_C0SC, one would be FTM1_C1SC
 		}
 	}
 
