@@ -8,6 +8,10 @@ void setup() {
 	pinMode(ledPin, OUTPUT);
 	pinMode(trigerPin, OUTPUT);
 	LEDSTATE=0;
+	
+	digitalWrite(trigerPin, 1);digitalWrite(ledPin, LEDSTATE);
+	delay(150);
+	digitalWrite(trigerPin, 0);
 }
 
 
@@ -42,8 +46,9 @@ void loop() {
 
 	digitalWrite(trigerPin, 1);digitalWrite(ledPin, LEDSTATE);
 
-
+	Serial.println("StartTimer: ");
 	UnevenTimerBlock.StartTimer(generalFunction,blockFunction);
+	Serial.println("StartTimered! ");
 	delay(100);
 	digitalWrite(trigerPin, 0);
 	Serial.println( UnevenTimerBlock.getLiveCount());

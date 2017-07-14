@@ -7,7 +7,7 @@ class UnevenTimeEventObject: public EventBaseObject
 {
 public:
 	int testvalue(void){return 99;};
-	int CurentTimerIndex;
+	int CurentTimerIndex = 0;
 };
 
 

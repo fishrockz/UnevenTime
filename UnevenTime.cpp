@@ -96,8 +96,7 @@ void UnevenTimeTriger::StartTimer(voidFunctionWithEventBaseObjectParameter  newE
 //FTM1_SC =  FTM1_SC_VALUE;
 setupFTM1(newEndFunction, newTickFunction);
 
-CurentTimerIndex=0;
-RollOverCount=0;
+
 }
 
 
