@@ -7,7 +7,7 @@ class UnevenTimeEventObject: public EventBaseObject
 {
 public:
 	int testvalue(void){return 99;};
-
+	int CurentTimerIndex;
 };
 
 
@@ -41,5 +41,7 @@ private:
 	
 	static UnevenTimeTriger *list[2];  // can be 8 if using ftm0 or ftm3 on teensy
 	
+	int CurentTimerIndex = 0;
+	int RollOverCount = 0;
 };
 
