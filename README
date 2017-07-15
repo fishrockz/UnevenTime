@@ -1,3 +1,22 @@
+[General note]
+
+
+
+This libary is for aplications when you want the general functionality of a timer but you dont want to use fixed time intervals.
+
+It is curretnly very ruff and ready
+
+it is heaveily inspored by Pauls brilliant libary https://github.com/PaulStoffregen/PulsePosition
+
+it also requires https://github.com/fishrockz/EventObjects
+
+a more interesting example can be found 
+
+
+
+[FTM notes]
+
+
 when porting accross timers
 
 
