@@ -36,6 +36,8 @@ uint16_t  UnevenTimeTriger::getLiveCount (){
 //FTM_SC_PS(0)  0 = no divied
 //TIMER_TICKS_PER_MICROSECOND
 
+
+/*
 const int numberOfTimes=10;
 uint32_t reversvalue [numberOfTimes] = { 
 10,
@@ -65,7 +67,7 @@ uint32_t TimeAsTicks [numberOfTimes] = {
 };
 
 
-
+*/
 
 
 
@@ -75,13 +77,13 @@ int CurentTimerIndex=0;
 int RollOverCount=0;
 
 
-int Trigdown = 		0b00000100;
-int TrigUp = 		0b00001000;
-int trigInternal = 	0b00010000;
-int trigExtPinAndISR = 	0b00100000;
-int trigISR=		0b01000000;
+const int Trigdown = 		0b00000100;
+const int TrigUp = 		0b00001000;
+const int trigInternal = 	0b00010000;
+const int trigExtPinAndISR = 	0b00100000;
+const int trigISR=		0b01000000;
 
-
+const int  FTM1_C0SC_VALUE = TrigUp | Trigdown |  trigISR | trigInternal;
 //uint32_t getWaitTicks (int index){
 // return reversvalue[III] *( TIMER_TICKS_PER_MICROSECOND*1000);
 //}
@@ -92,15 +94,27 @@ int trigISR=		0b01000000;
 extern EventObjectScheduler WsSEventManger;
 UnevenTimeEventObject  ThisUnevenTimeEventInfo;
 
-void UnevenTimeTriger::StartTimer(voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction) {
-//FTM1_SC =  FTM1_SC_VALUE;
-setupFTM1(newEndFunction, newTickFunction);
+void UnevenTimeTriger::StartTimer(uint32_t * TimesArray,uint32_t maxTimes,voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction) {
+
+
+	userUnevenEndFunc=newEndFunction;
+	userUnevenTickFunc=newTickFunction;
+	
+	maxIndex=maxTimes;
+	for (uint32_t III=0;III<maxIndex;III++){
+	
+		TimeAsTicks[III] = (uint32_t)((float)TimesArray[III] * ( TIMER_TICKS_PER_MICROSECOND*1000));
+		
+	}
+	
+	
+	setupFTM1();
 
 
 }
 
 
-void UnevenTimeTriger::setupFTM1(voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction) {
+void UnevenTimeTriger::setupFTM1() {
 
 	SIM_SCGC6|=1<<25; //enable FTM1 and FTM1 module clock
 //	SIM_SCGC6|=0x03000000
@@ -117,29 +131,22 @@ void UnevenTimeTriger::setupFTM1(voidFunctionWithEventBaseObjectParameter  newEn
 	FTM1_CNT = 0x0000; // Reset the count to zero
 	FTM1_MOD = 0xFFFF; // max modulus = 65535
 
+	
+	FTM1_C0SC = FTM1_C0SC_VALUE;// internal isr's but no output on pin 22
 
-	FTM1_C0SC = TrigUp | Trigdown |  trigISR | trigInternal;// internal isr's but no output on pin 22
 
 
-	//FTM1_C0SC &= ~SetBit; // this affect whether or not we will change the output but not if the isr gets trigered
-
-	//FTM1_C0SC = cscClear;
-	//            76543210 
-	//cscSet = 0b01011100;
-	//FTM1_C0V = 10000;
-	//  FTM1_C0SC = 0b100000;
 	FTM1_SC =  FTM1_SC_VALUE;
 	#if defined(KINETISK)
 	FTM1_MODE = 0;
 	#endif
-
+	Serial.print(" Update Ticks ");
 	
 	
-	for (int III=0;III<numberOfTimes;III++){
 	
-		TimeAsTicks[III] = reversvalue[III] *( TIMER_TICKS_PER_MICROSECOND*1000);
-		//Serial.println(TimeAsTicks[III]);
-	}
+	Serial.print(" Updated Ticks ");
+	Serial.print(TimeAsTicks[CurentTimerIndex]);
+	
 	//#define TIMER_TICKS_PER_MICROSECOND (CLOCKS_PER_MICROSECOND * FTM1_SC_PRESCALE_RATIO)
 	CurentTimerIndex=0;
 	FTM1_C0V = TimeAsTicks[CurentTimerIndex];
@@ -154,11 +161,10 @@ void UnevenTimeTriger::setupFTM1(voidFunctionWithEventBaseObjectParameter  newEn
 	
 	list[0] = this;
 	
-	userUnevenEndFunc=newEndFunction;
-	userUnevenTickFunc=newTickFunction;
 	
+	Serial.print(" Enable ");
 	NVIC_ENABLE_IRQ(IRQ_FTM1);
-
+	Serial.print(" All set up ");
 
 }
 
@@ -175,43 +181,48 @@ void ftm1_isr(void) {
 
 	if  (FTM1_SC & 0x80){
 		FTM1_SC &= ~0x80;
-
-		if (UnevenTimeTriger::list[0]->RollOverCount>0){
-			UnevenTimeTriger::list[0]->RollOverCount-=1;
-			if (UnevenTimeTriger::list[0]->RollOverCount==0){
-				FTM1_C0SC = TrigUp | Trigdown |  trigISR | trigInternal;
+		
+		
+		if (FTM1_C0SC &  FTM1_C0SC_VALUE == FTM1_C0SC_VALUE ) {
+			if (UnevenTimeTriger::list[0]->RollOverCount>0){
+				UnevenTimeTriger::list[0]->RollOverCount-=1;
+				if (UnevenTimeTriger::list[0]->RollOverCount==0){
+					FTM1_C0SC = TrigUp | Trigdown |  trigISR | trigInternal;
+				}
 			}
 		}
-		if (UnevenTimeTriger::list[1]->RollOverCount>0){
-			UnevenTimeTriger::list[1]->RollOverCount-=1;
-			if (UnevenTimeTriger::list[1]->RollOverCount==0){
-				FTM1_C1SC = TrigUp | Trigdown |  trigISR | trigInternal;
+		if (FTM1_C1SC &  FTM1_C0SC_VALUE == FTM1_C0SC_VALUE ) {
+			if (UnevenTimeTriger::list[1]->RollOverCount>0){
+				UnevenTimeTriger::list[1]->RollOverCount-=1;
+				if (UnevenTimeTriger::list[1]->RollOverCount==0){
+					FTM1_C1SC = TrigUp | Trigdown |  trigISR | trigInternal;
+				}
 			}
 		}
 	}
 
-
+	UnevenTimeTriger * ThisUnevenTimeTriger;
 	if  (FTM1_C0SC & 0x80){
-		FTM1_C0SC&=0x7F;
+
+		FTM1_C0SC &= 0x7F;
+		ThisUnevenTimeTriger=UnevenTimeTriger::list[0];
 		
-		if (LEDSTATE==1){LEDSTATE=0;}else{LEDSTATE=1;}
-		digitalWrite(ledPin, LEDSTATE);
-		CurentTimerIndex+=1;
-		
-		if (UnevenTimeTriger::list[0]->CurentTimerIndex<numberOfTimes){
-			FTM1_C0V = FTM1_C0V + TimeAsTicks[UnevenTimeTriger::list[0]->CurentTimerIndex] ;
+		ThisUnevenTimeTriger->CurentTimerIndex+=1;		
+
+		if (ThisUnevenTimeTriger->CurentTimerIndex<ThisUnevenTimeTriger->maxIndex){
+			FTM1_C0V = FTM1_C0V + ThisUnevenTimeTriger->TimeAsTicks[CurentTimerIndex] ;
 			FTM1_PWMLOAD|=0x200;// why 0x200???
-			if (TimeAsTicks[UnevenTimeTriger::list[0]->CurentTimerIndex]>pow(2,16)){
+			if (ThisUnevenTimeTriger->TimeAsTicks[ThisUnevenTimeTriger->CurentTimerIndex]>pow(2,16)){
 				FTM1_C0SC=0;
-				RollOverCount=TimeAsTicks[UnevenTimeTriger::list[0]->CurentTimerIndex]/pow(2,16);
+				RollOverCount=ThisUnevenTimeTriger->TimeAsTicks[ThisUnevenTimeTriger->CurentTimerIndex]/pow(2,16);
 			}
 			
 			EventBaseObject * UnevenTimeEventObject;
-			UnevenTimeTriger::list[0]->userUnevenTickFunc(UnevenTimeEventObject);
+			ThisUnevenTimeTriger->userUnevenTickFunc(UnevenTimeEventObject);
 		
 		}else{
 			FTM1_C0SC=0;
-			WsSEventManger.trigger( &ThisUnevenTimeEventInfo, UnevenTimeTriger::list[0]->userUnevenEndFunc );
+			WsSEventManger.trigger( &ThisUnevenTimeEventInfo, ThisUnevenTimeTriger->userUnevenEndFunc );
 		}
 	}
 
@@ -219,23 +230,25 @@ void ftm1_isr(void) {
 	if  (FTM1_C1SC & 0x80){
 		FTM1_C1SC&=0x7F;
 
+		
+		ThisUnevenTimeTriger=UnevenTimeTriger::list[1];
+		ThisUnevenTimeTriger->CurentTimerIndex+=1;
 
-
-		if (UnevenTimeTriger::list[1]->CurentTimerIndex<numberOfTimes){
-			FTM1_C1V = FTM1_C1V + TimeAsTicks[CurentTimerIndex] ;
+		if (ThisUnevenTimeTriger->CurentTimerIndex<ThisUnevenTimeTriger->maxIndex){
+			FTM1_C1V = FTM1_C1V + ThisUnevenTimeTriger->TimeAsTicks[CurentTimerIndex] ;
 			FTM1_PWMLOAD|=0x200;// why 0x200???
-			if (TimeAsTicks[UnevenTimeTriger::list[1]->CurentTimerIndex]>pow(2,16))
+			if (ThisUnevenTimeTriger->TimeAsTicks[ThisUnevenTimeTriger->CurentTimerIndex]>pow(2,16))
 			{
 				FTM1_C1SC=0;
-				RollOverCount=TimeAsTicks[UnevenTimeTriger::list[1]->CurentTimerIndex]/pow(2,16);
+				RollOverCount=ThisUnevenTimeTriger->TimeAsTicks[ThisUnevenTimeTriger->CurentTimerIndex]/pow(2,16);
 			}
 			
 			EventBaseObject * UnevenTimeEventObject;
-			UnevenTimeTriger::list[1]->userUnevenTickFunc(UnevenTimeEventObject);
+			ThisUnevenTimeTriger->userUnevenTickFunc(UnevenTimeEventObject);
 		
 		}else{
 			FTM1_C1SC=0;
-			WsSEventManger.trigger( &ThisUnevenTimeEventInfo, UnevenTimeTriger::list[1]->userUnevenEndFunc );
+			WsSEventManger.trigger( &ThisUnevenTimeEventInfo, ThisUnevenTimeTriger->userUnevenEndFunc );
 		}
 	}
 

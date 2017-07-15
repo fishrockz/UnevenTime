@@ -1,6 +1,13 @@
 #include <Arduino.h>
+#ifndef Included_EventObjects_H
+#define Included_EventObjects_H
+
 #include <EventObjects.h>
 
+#endif // Included_EventObjects_H 
+
+
+#define MAXdelays  20
 
 
 class UnevenTimeEventObject: public EventBaseObject
@@ -20,8 +27,8 @@ class UnevenTimeTriger
 public:
 	//UnevenTimeTriger(void);
 
-	void StartTimer();
-	void StartTimer(voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction);
+	//void StartTimer();
+	void StartTimer(uint32_t * TimesArray,uint32_t maxTimes,voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction);
 	
 	// keep?
 	int  getOverflow ();
@@ -34,10 +41,11 @@ private:
 	void ( * userUnevenTickFunc)(EventBaseObject * );
 	void ( * userUnevenEndFunc)(EventBaseObject * );
 	
-	void setupFTM1(voidFunctionWithEventBaseObjectParameter  newEndFunction,voidFunctionWithEventBaseObjectParameter  newTickFunction);
+	void setupFTM1();
 	
-	uint32_t TimeAsTicks [10];
-	uint32_t reversvalue [10];
+	uint32_t maxIndex=0;
+	uint32_t TimeAsTicks [MAXdelays];
+	uint32_t * reversvalue [];
 	
 	static UnevenTimeTriger *list[2];  // can be 8 if using ftm0 or ftm3 on teensy
 	
