@@ -48,7 +48,7 @@ private:
 	uint32_t * reversvalue [];
 	
 	static UnevenTimeTriger *list[2];  // can be 8 if using ftm0 or ftm3 on teensy
-	
+	static int Activelist[2] ;
 	int CurentTimerIndex = 0;
 	int RollOverCount = 0;
 };

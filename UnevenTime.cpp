@@ -13,7 +13,7 @@ extern int LEDSTATE;
 
 
 UnevenTimeTriger * UnevenTimeTriger::list[2];
-
+int UnevenTimeTriger::Activelist[2]={0,0};
 
 uint16_t  UnevenTimeTriger::getLiveCount (){
 
@@ -73,8 +73,6 @@ uint32_t TimeAsTicks [numberOfTimes] = {
 
 
 
-int CurentTimerIndex=0;
-int RollOverCount=0;
 
 
 const int Trigdown = 		0b00000100;
@@ -99,7 +97,7 @@ void UnevenTimeTriger::StartTimer(uint32_t * TimesArray,uint32_t maxTimes,voidFu
 
 	userUnevenEndFunc=newEndFunction;
 	userUnevenTickFunc=newTickFunction;
-	
+	Serial.print("maxIndex: ");Serial.println(maxIndex);
 	maxIndex=maxTimes;
 	for (uint32_t III=0;III<maxIndex;III++){
 	
@@ -159,9 +157,10 @@ void UnevenTimeTriger::setupFTM1() {
 	//*portConfigRegister(22) = PORT_PCR_MUX(4) | PORT_PCR_DSE | PORT_PCR_SRE;
 	//NVIC_SET_PRIORITY(IRQ_FTM1, 32);
 	
+	
+	
 	list[0] = this;
-	
-	
+	Activelist[0] = 1;
 	Serial.print(" Enable ");
 	NVIC_ENABLE_IRQ(IRQ_FTM1);
 	Serial.print(" All set up ");
@@ -182,8 +181,7 @@ void ftm1_isr(void) {
 	if  (FTM1_SC & 0x80){
 		FTM1_SC &= ~0x80;
 		
-		
-		if (FTM1_C0SC &  FTM1_C0SC_VALUE == FTM1_C0SC_VALUE ) {
+		if (UnevenTimeTriger::Activelist[0]==1 ) {	
 			if (UnevenTimeTriger::list[0]->RollOverCount>0){
 				UnevenTimeTriger::list[0]->RollOverCount-=1;
 				if (UnevenTimeTriger::list[0]->RollOverCount==0){
@@ -191,7 +189,7 @@ void ftm1_isr(void) {
 				}
 			}
 		}
-		if (FTM1_C1SC &  FTM1_C0SC_VALUE == FTM1_C0SC_VALUE ) {
+		if (UnevenTimeTriger::Activelist[1]==1 ) {
 			if (UnevenTimeTriger::list[1]->RollOverCount>0){
 				UnevenTimeTriger::list[1]->RollOverCount-=1;
 				if (UnevenTimeTriger::list[1]->RollOverCount==0){
@@ -208,13 +206,14 @@ void ftm1_isr(void) {
 		ThisUnevenTimeTriger=UnevenTimeTriger::list[0];
 		
 		ThisUnevenTimeTriger->CurentTimerIndex+=1;		
-
-		if (ThisUnevenTimeTriger->CurentTimerIndex<ThisUnevenTimeTriger->maxIndex){
-			FTM1_C0V = FTM1_C0V + ThisUnevenTimeTriger->TimeAsTicks[CurentTimerIndex] ;
+		int localCurIndex=ThisUnevenTimeTriger->CurentTimerIndex;
+		
+		if (localCurIndex<ThisUnevenTimeTriger->maxIndex){
+			FTM1_C0V = FTM1_C0V + ThisUnevenTimeTriger->TimeAsTicks[localCurIndex] ;
 			FTM1_PWMLOAD|=0x200;// why 0x200???
-			if (ThisUnevenTimeTriger->TimeAsTicks[ThisUnevenTimeTriger->CurentTimerIndex]>pow(2,16)){
+			if (ThisUnevenTimeTriger->TimeAsTicks[localCurIndex]>pow(2,16)){
 				FTM1_C0SC=0;
-				RollOverCount=ThisUnevenTimeTriger->TimeAsTicks[ThisUnevenTimeTriger->CurentTimerIndex]/pow(2,16);
+				ThisUnevenTimeTriger->RollOverCount=ThisUnevenTimeTriger->TimeAsTicks[localCurIndex]/pow(2,16);
 			}
 			
 			EventBaseObject * UnevenTimeEventObject;
@@ -233,14 +232,15 @@ void ftm1_isr(void) {
 		
 		ThisUnevenTimeTriger=UnevenTimeTriger::list[1];
 		ThisUnevenTimeTriger->CurentTimerIndex+=1;
-
-		if (ThisUnevenTimeTriger->CurentTimerIndex<ThisUnevenTimeTriger->maxIndex){
-			FTM1_C1V = FTM1_C1V + ThisUnevenTimeTriger->TimeAsTicks[CurentTimerIndex] ;
+		int localCurIndex=ThisUnevenTimeTriger->CurentTimerIndex;
+		
+		if (localCurIndex<ThisUnevenTimeTriger->maxIndex){
+			FTM1_C1V = FTM1_C1V + ThisUnevenTimeTriger->TimeAsTicks[localCurIndex] ;
 			FTM1_PWMLOAD|=0x200;// why 0x200???
-			if (ThisUnevenTimeTriger->TimeAsTicks[ThisUnevenTimeTriger->CurentTimerIndex]>pow(2,16))
+			if (ThisUnevenTimeTriger->TimeAsTicks[localCurIndex]>pow(2,16))
 			{
 				FTM1_C1SC=0;
-				RollOverCount=ThisUnevenTimeTriger->TimeAsTicks[ThisUnevenTimeTriger->CurentTimerIndex]/pow(2,16);
+				ThisUnevenTimeTriger->RollOverCount=ThisUnevenTimeTriger->TimeAsTicks[localCurIndex]/pow(2,16);
 			}
 			
 			EventBaseObject * UnevenTimeEventObject;
