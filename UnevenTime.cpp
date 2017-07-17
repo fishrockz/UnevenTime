@@ -216,12 +216,16 @@ void ftm1_isr(void) {
 				ThisUnevenTimeTriger->RollOverCount=ThisUnevenTimeTriger->TimeAsTicks[localCurIndex]/pow(2,16);
 			}
 			
-			EventBaseObject * UnevenTimeEventObject;
-			ThisUnevenTimeTriger->userUnevenTickFunc(UnevenTimeEventObject);
+			
+			UnevenTimeEventObject ActiveObject = ThisUnevenTimeTriger->CurrObject;
+			ActiveObject.CurentTimerIndex=localCurIndex;
+			ThisUnevenTimeTriger->userUnevenTickFunc(&ActiveObject);
 		
 		}else{
 			FTM1_C0SC=0;
-			WsSEventManger.trigger( &ThisUnevenTimeEventInfo, ThisUnevenTimeTriger->userUnevenEndFunc );
+			UnevenTimeEventObject * ActiveObject = & ThisUnevenTimeTriger->CurrObject;
+			ActiveObject->CurentTimerIndex=localCurIndex;
+			WsSEventManger.trigger( ActiveObject, ThisUnevenTimeTriger->userUnevenEndFunc );
 		}
 	}
 
@@ -243,12 +247,17 @@ void ftm1_isr(void) {
 				ThisUnevenTimeTriger->RollOverCount=ThisUnevenTimeTriger->TimeAsTicks[localCurIndex]/pow(2,16);
 			}
 			
-			EventBaseObject * UnevenTimeEventObject;
-			ThisUnevenTimeTriger->userUnevenTickFunc(UnevenTimeEventObject);
+			UnevenTimeEventObject ActiveObject = ThisUnevenTimeTriger->CurrObject;
+			ActiveObject.CurentTimerIndex=localCurIndex;
+			ThisUnevenTimeTriger->userUnevenTickFunc(&ActiveObject);
+
 		
 		}else{
 			FTM1_C1SC=0;
-			WsSEventManger.trigger( &ThisUnevenTimeEventInfo, ThisUnevenTimeTriger->userUnevenEndFunc );
+			
+			UnevenTimeEventObject * ActiveObject = & ThisUnevenTimeTriger->CurrObject;
+			ActiveObject->CurentTimerIndex=localCurIndex;
+			WsSEventManger.trigger( ActiveObject, ThisUnevenTimeTriger->userUnevenEndFunc );
 		}
 	}
 

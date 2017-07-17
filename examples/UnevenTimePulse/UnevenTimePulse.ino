@@ -74,8 +74,10 @@ void setup() {
 
 
 void blockFunction(EventBaseObject * ThisFunctionsInfoPointer){
-
-	Serial.println ("this is the fast function");
+	UnevenTimeEventObject* ThisFunctionsInfo = static_cast<UnevenTimeEventObject*>(ThisFunctionsInfoPointer);
+	
+	Serial.print ("this is the fast function: ");
+	Serial.println (ThisFunctionsInfo->CurentTimerIndex);
 	
 	if (LEDSTATE==1){LEDSTATE=0;}else{LEDSTATE=1;}
 	digitalWrite(ledPin, LEDSTATE);
@@ -84,8 +86,10 @@ void blockFunction(EventBaseObject * ThisFunctionsInfoPointer){
 }
 
 void generalFunction(EventBaseObject * ThisFunctionsInfoPointer){
-
-	Serial.println ("this is the slow function");
+	UnevenTimeEventObject* ThisFunctionsInfo = static_cast<UnevenTimeEventObject*>(ThisFunctionsInfoPointer);
+	
+	Serial.print ("this is the slow function: ");
+	Serial.println (ThisFunctionsInfo->CurentTimerIndex);
 
 	if (LEDSTATE==1){LEDSTATE=0;}else{LEDSTATE=1;}
 	digitalWrite(ledPin, LEDSTATE);

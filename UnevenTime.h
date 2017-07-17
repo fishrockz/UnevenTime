@@ -41,6 +41,8 @@ private:
 	void ( * userUnevenTickFunc)(EventBaseObject * );
 	void ( * userUnevenEndFunc)(EventBaseObject * );
 	
+	UnevenTimeEventObject CurrObject;
+	
 	void setupFTM1();
 	
 	uint32_t maxIndex=0;
